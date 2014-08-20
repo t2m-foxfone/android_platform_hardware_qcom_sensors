@@ -37,122 +37,6 @@
 #include "PressureSensor.h"
 
 /*****************************************************************************/
-
-/* The SENSORS Module */
-static const struct sensor_t sSensorList[] = {
-	/* Accelerometer */
-	{
-		"accelerometer",
-		"ST Micro",
-		1,	/* hw/sw version */
-		SENSORS_ACCELERATION_HANDLE,
-		SENSOR_TYPE_ACCELEROMETER,
-		(2.0f * 9.81f),
-		(9.81f / 1024),
-		0.2f,		/* mA */
-		2000,	/* microseconds */
-		0,
-		0,
-		{ }
-	},
-
-	/* magnetic field sensor
-	{
-		"AK8975",
-		"Asahi Kasei Microdevices",
-		1,
-		SENSORS_MAGNETIC_FIELD_HANDLE,
-		SENSOR_TYPE_MAGNETIC_FIELD,
-		2000.0f,
-		(1.0f/16.0f),
-		6.8f,
-		16667,
-		0,
-		0,
-		{ }
-	},*/
-
-	/* orientation sensor
-	{
-		"AK8975",
-		"Asahi Kasei Microdevices",
-		1,
-		SENSORS_ORIENTATION_HANDLE,
-		SENSOR_TYPE_ORIENTATION,
-		360.0f,
-		(1.0f/64.0f),
-		7.8f,
-		16667 ,
-		0,
-		0,
-		{ }
-	},*/
-
-	/* light sensor name */
-	{
-		"TSL27713FN",
-		"Taos",
-		1,
-		SENSORS_LIGHT_HANDLE,
-		SENSOR_TYPE_LIGHT,
-		(powf(10, (280.0f / 47.0f)) * 4),
-		1.0f,
-		0.75f,
-		0,
-		0,
-		0,
-		{ }
-	},
-
-	/* proximity sensor */
-	{
-		"TSL27713FN",
-		"Taos",
-		1,
-		SENSORS_PROXIMITY_HANDLE,
-		SENSOR_TYPE_PROXIMITY,
-		5.0f,
-		5.0f,
-		0.75f,
-		0,
-		0,
-		0,
-		{ }
-	},
-
-	/* gyro scope */
-	{
-		"MPU3050",
-		"Invensense",
-		1,
-		SENSORS_GYROSCOPE_HANDLE,
-		SENSOR_TYPE_GYROSCOPE,
-		35.0f,
-		0.06f,
-		0.2f,
-		2000,
-		0,
-		0,
-		{ }
-	},
-	
-	/* barometer */
-	{
-		"bmp180",
-		"Bosch",
-		1,
-		SENSORS_PRESSURE_HANDLE,
-		SENSOR_TYPE_PRESSURE,
-		1100.0f,
-		0.01f,
-		0.67f,
-		20000,
-		0,
-		0,
-		{ }
-	}
-};
-
 static struct sensor_t sensor_list[MAX_SENSORS];
 static char name[MAX_SENSORS][SYSFS_MAXLEN];
 static char vendor[MAX_SENSORS][SYSFS_MAXLEN];
@@ -293,8 +177,8 @@ static int sensors__get_sensors_list(struct sensors_module_t* module,
 		*list = sensor_list;
 		return dynamic_sensor_number;
 	} else { /* If we could not find any sensor folder, load the default.*/
-		*list = sSensorList;
-		return ARRAY_SIZE(sSensorList);
+		ALOGE("no list:get_sensors_list failed!");
+		return 0;
 	}
 }
 
@@ -392,10 +276,12 @@ sensors_poll_context_t::sensors_poll_context_t()
 		mPollFds[proximity].events = POLLIN;
 		mPollFds[proximity].revents = 0;
 
+#if 0
 		mSensors[compass] = new AkmSensor();
 		mPollFds[compass].fd = mSensors[compass]->getFd();
 		mPollFds[compass].events = POLLIN;
 		mPollFds[compass].revents = 0;
+#endif
 
 		mSensors[gyro] = new GyroSensor();
 		mPollFds[gyro].fd = mSensors[gyro]->getFd();
@@ -422,7 +308,7 @@ sensors_poll_context_t::sensors_poll_context_t()
 				mPollFds[device_id].revents = 0;
 				accel = device_id;
 				break;
-
+#if 0
 				case SENSORS_MAGNETIC_FIELD_HANDLE:
 				mSensors[device_id] = new AkmSensor();
 				mPollFds[device_id].fd = mSensors[device_id]->getFd();
@@ -430,7 +316,7 @@ sensors_poll_context_t::sensors_poll_context_t()
 				mPollFds[device_id].revents = 0;
 				compass = device_id;
 				break;
-
+#endif
 				case SENSORS_PROXIMITY_HANDLE:
 				mSensors[device_id] = new ProximitySensor(name[handle]);
 				mPollFds[device_id].fd = mSensors[device_id]->getFd();

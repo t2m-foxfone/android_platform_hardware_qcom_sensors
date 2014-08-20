@@ -26,7 +26,6 @@ LOCAL_SRC_FILES :=	\
 		SensorBase.cpp			\
 		LightSensor.cpp			\
 		ProximitySensor.cpp		\
-		AkmSensor.cpp			\
 		Accelerometer.cpp				\
 		Mpu3050.cpp				\
 		Bmp180.cpp				\
