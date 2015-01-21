@@ -29,12 +29,17 @@
 #include <utils/Log.h>
 
 #include "sensors.h"
+#ifdef BMA222E_SENSOR
+#include "BmaSensor.h"
+#else
 #include "AccelSensor.h"
+#endif
 #include "LightSensor.h"
 #include "ProximitySensor.h"
 #include "AkmSensor.h"
 #include "GyroSensor.h"
 #include "PressureSensor.h"
+#include "ST480Sensor.h"
 
 /*****************************************************************************/
 static struct sensor_t sensor_list[MAX_SENSORS];
@@ -248,6 +253,7 @@ sensors_poll_context_t::sensors_poll_context_t()
 {
 	int number;
 	int handle;
+	int compass_id = -1;
 	light = -1;
 	proximity = -1;
 	compass = -1;
@@ -288,10 +294,19 @@ sensors_poll_context_t::sensors_poll_context_t()
 		mPollFds[gyro].events = POLLIN;
 		mPollFds[gyro].revents = 0;
 
+#ifdef BMA222E_SENSOR
+		mSensors[accel] = new BmaSensor("bma2x2", TOP_Y_FORWARD);
+#else
 		mSensors[accel] = new AccelSensor();
+#endif
 		mPollFds[accel].fd = mSensors[accel]->getFd();
 		mPollFds[accel].events = POLLIN;
 		mPollFds[accel].revents = 0;
+
+		mSensors[compass] = new ST480Sensor((BmaSensor*)mSensors[accel]);
+		mPollFds[compass].fd = mSensors[compass]->getFd();
+		mPollFds[compass].events = POLLIN;
+		mPollFds[compass].revents = 0;
 
 		mSensors[pressure] = new PressureSensor();
 		mPollFds[pressure].fd = mSensors[pressure]->getFd();
@@ -302,7 +317,11 @@ sensors_poll_context_t::sensors_poll_context_t()
 		for (handle = 0; handle < number; handle++) {
 			switch (sensor_list[handle].handle) {
 				case SENSORS_ACCELERATION_HANDLE:
+#ifdef BMA222E_SENSOR
+				mSensors[device_id] = new BmaSensor(name[handle], TOP_Y_FORWARD);
+#else
 				mSensors[device_id] = new AccelSensor(name[handle]);
+#endif
 				mPollFds[device_id].fd = mSensors[device_id]->getFd();
 				mPollFds[device_id].events = POLLIN;
 				mPollFds[device_id].revents = 0;
@@ -317,6 +336,18 @@ sensors_poll_context_t::sensors_poll_context_t()
 				compass = device_id;
 				break;
 #endif
+
+				case SENSORS_ORIENTATION_HANDLE:
+				if (accel > 0) {
+					mSensors[device_id] = new ST480Sensor((BmaSensor*)mSensors[accel]);
+					mPollFds[device_id].fd = mSensors[device_id]->getFd();
+					mPollFds[device_id].events = POLLIN;
+					mPollFds[device_id].revents = 0;
+					compass = device_id;
+				}
+				compass_id = device_id;
+				break;
+
 				case SENSORS_PROXIMITY_HANDLE:
 				mSensors[device_id] = new ProximitySensor(name[handle]);
 				mPollFds[device_id].fd = mSensors[device_id]->getFd();
@@ -354,6 +385,15 @@ sensors_poll_context_t::sensors_poll_context_t()
 				device_id--;
 			}
 			device_id++;
+		}
+
+		if (compass < 0)
+		{
+			mSensors[compass_id] = new ST480Sensor((BmaSensor*)mSensors[accel]);
+			mPollFds[compass_id].fd = mSensors[compass_id]->getFd();
+			mPollFds[compass_id].events = POLLIN;
+			mPollFds[compass_id].revents = 0;
+			compass = compass_id;
 		}
 	}
 	ALOGI("The avaliable sensor handle number is %d",device_id);
